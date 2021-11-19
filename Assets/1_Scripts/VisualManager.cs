@@ -5,6 +5,13 @@ using UnityEngine.UI;
 
 public class VisualManager : MonoBehaviour
 {
+    public GameObject I_PreviewTetronimo;
+    public GameObject O_PreviewTetronimo;
+    public GameObject T_PreviewTetronimo;
+    public GameObject S_PreviewTetronimo;
+    public GameObject Z_PreviewTetronimo;
+    public GameObject J_PreviewTetronimo;
+    public GameObject L_PreviewTetronimo;
     public Text ScoreText; 
     public float SideLength = 1.0f;
     public GameObject PiecePrefab;
@@ -59,6 +66,41 @@ public class VisualManager : MonoBehaviour
                 }
             }
         }
-        //TODO: update next tetris tile
+        activatePreviewTetronimo(gameManager.NextTetronimoShape);
+    }
+
+    private void activatePreviewTetronimo(TetronimoShape tetronimo)
+    {
+        I_PreviewTetronimo.SetActive(false);
+        O_PreviewTetronimo.SetActive(false);
+        T_PreviewTetronimo.SetActive(false);
+        S_PreviewTetronimo.SetActive(false);
+        Z_PreviewTetronimo.SetActive(false);
+        J_PreviewTetronimo.SetActive(false);
+        L_PreviewTetronimo.SetActive(false);
+        switch (tetronimo)
+        {
+            case TetronimoShape.I:
+                I_PreviewTetronimo.SetActive(true);
+                break;
+            case TetronimoShape.O:
+                O_PreviewTetronimo.SetActive(true);
+                break;
+            case TetronimoShape.T:
+                T_PreviewTetronimo.SetActive(true);
+                break;
+            case TetronimoShape.S:
+                S_PreviewTetronimo.SetActive(true);
+                break;
+            case TetronimoShape.Z:
+                Z_PreviewTetronimo.SetActive(true);
+                break;
+            case TetronimoShape.J:
+                J_PreviewTetronimo.SetActive(true);
+                break;
+            case TetronimoShape.L:
+                L_PreviewTetronimo.SetActive(true);
+                break;
+        }
     }
 }

@@ -3,7 +3,8 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-
+using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 public class Piece
 {
@@ -282,7 +283,7 @@ public class Shape
 
 public class Tetronimo
 {
-   
+
     public int[] Coordinates;
     public Shape shape;
     public RotationFacing rotationFacing;
@@ -369,6 +370,7 @@ public class Tetronimo
 
 public class GameManager : MonoBehaviour
 {
+    public Button GameOverButton;
     public const int GRID_WIDTH = 10;
     public const int GRID_HEIGHT = 20;
     public int Score = 0;
@@ -377,7 +379,7 @@ public class GameManager : MonoBehaviour
 
     private System.Random random = new System.Random();
 
-    private float tickStep = 1.0f;
+    private float tickStep = 0.25f;
     private float tickDeadline = 0.0f;
 
     private Piece[,] grid = new Piece[GRID_WIDTH, GRID_HEIGHT];
@@ -395,8 +397,15 @@ public class GameManager : MonoBehaviour
 
     private int[] scoreMultiplyer = { 40, 100, 300, 1200 };
 
+    private bool running = true;
+
     private void Start()
     {
+        GameOverButton.onClick.AddListener(() =>
+        {
+            SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+        });
+        GameOverButton.gameObject.SetActive(false);
         for (int x = 0; x < GRID_WIDTH; x++)
         {
             for (int y = 0; y < GRID_HEIGHT; y++)
@@ -410,6 +419,10 @@ public class GameManager : MonoBehaviour
     }
     private void Update()
     {
+        if (!running)
+        {
+            return;
+        }
         clearTetronimo();
         checkInput();
         saveTetronimo();
@@ -462,12 +475,6 @@ public class GameManager : MonoBehaviour
             currentSoftDropScore = 0;
             softDropActive = false;
         }
-        //TODO: check for rotation
-        //TODO: check for rotation collision
-        //TODO: check for sideways movement
-        //TODO: check for sideways collision
-        //TODO: check for down movement speedup
-        //TODO: check for settled
 
     }
 
@@ -481,7 +488,7 @@ public class GameManager : MonoBehaviour
         }
 
         //wallkicks
-        if(!rotated)
+        if (!rotated)
         {
             if (checkLegalHorizontalMove(MoveDirection.RIGHT))
             {
@@ -581,7 +588,7 @@ public class GameManager : MonoBehaviour
     private void spawnTetronimo()
     {
         maxSoftDropScore = 0;
-        int[] spawnCoordinates = new int[] { (GRID_WIDTH / 2) - 2, GRID_HEIGHT -1 };
+        int[] spawnCoordinates = new int[] { (GRID_WIDTH / 2) - 2, GRID_HEIGHT - 1 };
         tetronimo = new Tetronimo(nextTetronimoShape, spawnCoordinates);
         nextTetronimoShape = pickRandomTetronimoShape();
     }
@@ -663,6 +670,7 @@ public class GameManager : MonoBehaviour
     private void settleTetronimo()
     {
         int[,] coordinates = tetronimo.GetPiecesCoordinates();
+        bool lost = false;
         for (int i = 0; i < 4; i++)
         {
             int x = coordinates[i, 0];
@@ -671,8 +679,16 @@ public class GameManager : MonoBehaviour
             {
                 grid[x, y].Settled = true;
             }
+            if (y == GRID_HEIGHT - 1 && x == GRID_WIDTH / 2)
+            {
+                lost = true;
+            }
         }
         Score += maxSoftDropScore;
+        if (lost)
+        {
+            gameOver();
+        }
     }
 
     private int checkRowsClear()
@@ -704,16 +720,24 @@ public class GameManager : MonoBehaviour
 
     private void clearRow(int row)
     {
+        Debug.Log(row);
         for (int y = row + 1; y < GRID_HEIGHT; y++)
         {
             for (int x = 0; x < GRID_WIDTH; x++)
             {
-                if (!grid[x, y].Settled)
+                if (!(grid[x, y].Active&&!grid[x, y].Settled))
                 {
-                    grid[x, y - 1].CopyOtherPiece(grid[x, y]);
+                    grid[x, y - 1].Active = grid[x, y].Active;
+                    grid[x, y - 1].Color = grid[x, y].Color;
                 }
             }
         }
+    }
+
+    private void gameOver()
+    {
+        running = false;
+        GameOverButton.gameObject.SetActive(true);
     }
 }
 
