@@ -17,5 +17,7 @@ public class SpriteDebugVisualizer : MonoBehaviour
         Gizmos.DrawLine(b, c);
         Gizmos.DrawLine(c, d);
         Gizmos.DrawLine(d, a);
+        Gizmos.DrawLine(a, c);
+        Gizmos.DrawLine(b, d);
     }
 }
