@@ -12,7 +12,8 @@ public class VisualManager : MonoBehaviour
     public GameObject Z_PreviewTetronimo;
     public GameObject J_PreviewTetronimo;
     public GameObject L_PreviewTetronimo;
-    public Text ScoreText; 
+    public GameObject TetrisBackground;
+    public Text ScoreText;
     public float SideLength = 1.0f;
     public GameObject PiecePrefab;
     private GameManager gameManager;
@@ -37,6 +38,17 @@ public class VisualManager : MonoBehaviour
                 pieces[x, y] = piece;
             }
         }
+        Vector3 tetrisBackgroundScale = new Vector3(1, 1, 1);
+        tetrisBackgroundScale.x = GameManager.GRID_WIDTH * SideLength;
+        tetrisBackgroundScale.y = GameManager.GRID_HEIGHT * SideLength;
+        TetrisBackground.transform.localScale = tetrisBackgroundScale;
+        TetrisBackground.transform.position = grid.CellToLocal(new Vector3Int(0, 0, 0))
+            + Vector3.right * GameManager.GRID_WIDTH * SideLength * 0.5f
+            + Vector3.up * GameManager.GRID_HEIGHT * SideLength * 0.5f
+            + Vector3.left * SideLength
+            + Vector3.down * SideLength
+            + new Vector3(0, 0, 0.1f);
+
     }
 
     private void Update()
@@ -46,7 +58,7 @@ public class VisualManager : MonoBehaviour
 
     private void render()
     {
-        ScoreText.text = ""+gameManager.Score;
+        ScoreText.text = "" + gameManager.Score;
         Piece[,] gridInformation = gameManager.Grid;
         for (int x = 0; x < GameManager.GRID_WIDTH; x++)
         {
@@ -56,13 +68,19 @@ public class VisualManager : MonoBehaviour
                 Piece pieceInfo = gridInformation[x, y];
                 if (pieceInfo.Active)
                 {
-                    pieceVisual.SetColor(pieceInfo.Color);
-                    pieceVisual.GetComponent<SpriteDebugVisualizer>().Color = Color.clear;
+                    if (pieceVisual)
+                    {
+                        pieceVisual.SetColor(pieceInfo.Color);
+                        pieceVisual.GetComponent<SpriteDebugVisualizer>().Color = Color.clear;
+                    }
                 }
                 else
                 {
-                    pieceVisual.SetColor(Color.clear);
-                    pieceVisual.GetComponent<SpriteDebugVisualizer>().Color = new Color(0.4f,0.4f,0.4f,0.4f);
+                    if (pieceVisual)
+                    {
+                        pieceVisual.SetColor(Color.clear);
+                        pieceVisual.GetComponent<SpriteDebugVisualizer>().Color = new Color(0.4f, 0.4f, 0.4f, 0.4f);
+                    }
                 }
             }
         }

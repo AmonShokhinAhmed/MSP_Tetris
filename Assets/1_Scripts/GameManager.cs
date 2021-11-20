@@ -443,19 +443,19 @@ public class GameManager : MonoBehaviour
 
     private void checkInput()
     {
+        checkKeyboardInput();
+        checkTouchInput();
+    }
+
+    private void checkKeyboardInput()
+    {
         if (Input.GetKeyDown(KeyCode.A))
         {
-            if (checkLegalHorizontalMove(MoveDirection.LEFT))
-            {
-                tetronimo.ApplyHorizontalMove(MoveDirection.LEFT);
-            }
+            moveTetronimo(MoveDirection.LEFT);
         }
         if (Input.GetKeyDown(KeyCode.D))
         {
-            if (checkLegalHorizontalMove(MoveDirection.RIGHT))
-            {
-                tetronimo.ApplyHorizontalMove(MoveDirection.RIGHT);
-            }
+            moveTetronimo(MoveDirection.RIGHT);
         }
         if (Input.GetKeyDown(KeyCode.Q))
         {
@@ -475,9 +475,95 @@ public class GameManager : MonoBehaviour
             currentSoftDropScore = 0;
             softDropActive = false;
         }
+    }
+
+    private Vector2 startPos;
+    private bool slided=false;
+    private void checkTouchInput()
+    {
+        if (Input.touchCount > 0)
+        {
+            Touch touch = Input.GetTouch(0);
+            Vector2 touchMovement;
+            switch (touch.phase)
+            {
+                case TouchPhase.Began:
+                    slided = false;
+                    startPos = touch.position;
+                    break;
+                case TouchPhase.Moved:
+                    touchMovement = touch.position - startPos;
+                    handleTouchMovement(touchMovement, touch.position, false);
+                    break;
+                case TouchPhase.Ended:
+                    touchMovement = touch.position - startPos;
+                    handleTouchMovement(touchMovement, touch.position, true);
+                    maxSoftDropScore = Mathf.Max(maxSoftDropScore, currentSoftDropScore);
+                    currentSoftDropScore = 0;
+                    softDropActive = false;
+                    break;
+            }
+        }
+    }
+
+    private void handleTouchMovement(Vector2 touchMovement, Vector2 endPosition, bool touchEnded)
+    {
+        Debug.Log(touchMovement);
+        float slideEpsilon = Screen.width * 0.1f;
+        Debug.Log(slideEpsilon);
+        if (touchEnded &&  !slided)
+        {
+            float middle = Screen.width * 0.5f;
+            if (endPosition.x < middle)
+            {
+                rotateTetronimo(RotationDirection.LEFT);
+            }
+            else
+            {
+                rotateTetronimo(RotationDirection.RIGHT);
+            }
+            return;
+        }
+
+        if (touchMovement.magnitude >= slideEpsilon)
+        {
+            slided = true;
+            startPos = endPosition;
+            if (Mathf.Abs(touchMovement.x) > Mathf.Abs(touchMovement.y))
+            {
+                if (touchMovement.x >= 0)
+                {
+                    moveTetronimo(MoveDirection.RIGHT);
+                }
+                else
+                {
+                    moveTetronimo(MoveDirection.LEFT);
+                }
+            }
+            else
+            {
+                if (touchMovement.y <= 0)
+                {
+                    softDropActive = true;
+                }
+                else
+                {
+                    maxSoftDropScore = Mathf.Max(maxSoftDropScore, currentSoftDropScore);
+                    currentSoftDropScore = 0;
+                    softDropActive = false;
+                }
+            }
+        }
 
     }
 
+    private void moveTetronimo(MoveDirection direction)
+    {
+        if (checkLegalHorizontalMove(direction))
+        {
+            tetronimo.ApplyHorizontalMove(direction);
+        }
+    }
     private void rotateTetronimo(RotationDirection direction)
     {
         bool rotated = false;
@@ -559,9 +645,8 @@ public class GameManager : MonoBehaviour
     }
     private void tick()
     {
-        moveTetronimo();
+        moveTetronimoDown();
         Score += checkRowsClear();
-
     }
 
     private void softDrop()
@@ -598,7 +683,7 @@ public class GameManager : MonoBehaviour
         TetronimoShape randomTetronimoShape = (TetronimoShape)values.GetValue(random.Next(values.Length));
         return randomTetronimoShape;
     }
-    private void moveTetronimo()
+    private void moveTetronimoDown()
     {
         if (checkTetronimoSettled())
         {
@@ -690,7 +775,6 @@ public class GameManager : MonoBehaviour
             gameOver();
         }
     }
-
     private int checkRowsClear()
     {
         int clearedRows = 0;
@@ -717,17 +801,16 @@ public class GameManager : MonoBehaviour
         }
         return 0;
     }
-
     private void clearRow(int row)
     {
-        Debug.Log(row);
         for (int y = row + 1; y < GRID_HEIGHT; y++)
         {
             for (int x = 0; x < GRID_WIDTH; x++)
             {
-                if (!(grid[x, y].Active&&!grid[x, y].Settled))
+                if (!(grid[x, y].Active && !grid[x, y].Settled))
                 {
                     grid[x, y - 1].Active = grid[x, y].Active;
+                    grid[x, y - 1].Settled = grid[x, y].Settled;
                     grid[x, y - 1].Color = grid[x, y].Color;
                 }
             }
