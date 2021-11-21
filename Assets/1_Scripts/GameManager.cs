@@ -387,13 +387,21 @@ public class GameManager : MonoBehaviour
     private TetronimoShape nextTetronimoShape;
     private Tetronimo tetronimo = null;
 
-    private float softDropStep = 0.05f;
     private float softDropDeadline = 0.0f;
     private bool softDropActive = false;
     private int maxSoftDropScore = 0;
     private int currentSoftDropScore = 0;
 
     private int currentLevel = 0;
+    private int currentLinesCleared = 0;
+    private int[] framesPerGridCellByLevel = {
+        48, 43, 38, 33, 28, 23, 18, 8, 6, 5, 5, 5, 4, 4, 4, 3, 3, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1 
+};
+
+    private int[] linesBeforeLevelIncrease =
+    {
+        10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 100, 100, 100, 100, 100, 100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200, 200, 200, 200
+    };
 
     private int[] scoreMultiplyer = { 40, 100, 300, 1200 };
 
@@ -417,6 +425,10 @@ public class GameManager : MonoBehaviour
         nextTetronimoShape = pickRandomTetronimoShape();
         spawnTetronimo();
     }
+
+    private float accumulatedDelta = 0.0f;
+    private float frameDelta = 1.0f / 60.0f;
+    private int frameCounter = 0;
     private void Update()
     {
         if (!running)
@@ -426,16 +438,23 @@ public class GameManager : MonoBehaviour
         clearTetronimo();
         checkInput();
         saveTetronimo();
-        tickDeadline += Time.deltaTime;
-        if (tickDeadline >= tickStep)
+
+        accumulatedDelta += Time.deltaTime;
+        while (accumulatedDelta >= frameDelta)
         {
-            tickDeadline -= tickStep;
+            accumulatedDelta -= frameDelta;
+            frameCounter++;
+        }
+        while(frameCounter>=framesPerGridCellByLevel[Mathf.Min(currentLevel, framesPerGridCellByLevel.Length - 1)])
+        {
+            frameCounter -= framesPerGridCellByLevel[Mathf.Min(currentLevel, framesPerGridCellByLevel.Length - 1)];
             tick();
         }
+
         softDropDeadline += Time.deltaTime;
-        if (softDropDeadline >= softDropStep)
+        while (softDropDeadline >= frameDelta)
         {
-            softDropDeadline -= softDropStep;
+            softDropDeadline -= frameDelta;
             softDrop();
         }
 
@@ -679,8 +698,12 @@ public class GameManager : MonoBehaviour
     }
     private TetronimoShape pickRandomTetronimoShape()
     {
+        TetronimoShape randomTetronimoShape = nextTetronimoShape;
         Array values = Enum.GetValues(typeof(TetronimoShape));
-        TetronimoShape randomTetronimoShape = (TetronimoShape)values.GetValue(random.Next(values.Length));
+        while (randomTetronimoShape == nextTetronimoShape)
+        {
+            randomTetronimoShape = (TetronimoShape)values.GetValue(random.Next(values.Length));
+        }
         return randomTetronimoShape;
     }
     private void moveTetronimoDown()
@@ -797,6 +820,14 @@ public class GameManager : MonoBehaviour
         }
         if (clearedRows > 0)
         {
+            currentLinesCleared += clearedRows;
+
+            while (currentLinesCleared >= linesBeforeLevelIncrease[Mathf.Min(currentLevel, linesBeforeLevelIncrease.Length - 1)])
+            {
+                currentLinesCleared -= linesBeforeLevelIncrease[Mathf.Min(currentLevel, linesBeforeLevelIncrease.Length - 1)];
+                currentLevel = Mathf.Min(currentLevel+1, 29);
+                Debug.Log("Level " + currentLevel);
+            }
             return scoreMultiplyer[clearedRows - 1] * (currentLevel + 1);
         }
         return 0;
